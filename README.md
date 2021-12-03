@@ -142,8 +142,8 @@ spec:
 ```
 
 ```sh
-$ kubectl create -f rc-definition.yml 	# create th replication controller
-$ kubectl get replicationcontroller			# get the list of created replication controller
+$ kubectl create -f rc-definition.yml     # create th replication controller
+$ kubectl get replicationcontroller       # get the list of created replication controller
 ```
 
 
