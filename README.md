@@ -192,7 +192,7 @@ spec:
 ```
 ```sh
 $ kubectl create -f replicaset-definition.yml 		# create th replication controller
-$ kubectl get replicaset								# get the list of created replicaset
+$ kubectl get replicaset								          # get the list of created replicaset
 ```
 
 **6. Update the replica to scale from 3 to 6**
