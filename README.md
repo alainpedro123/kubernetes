@@ -142,7 +142,7 @@ spec:
 ```
 
 ```sh
-$ kubectl create -f rc-definition.yml     # create th replication controller
+$ kubectl create -f rc-definition.yml     # create the replication controller
 $ kubectl get replicationcontroller       # get the list of created replication controller
 ```
 
@@ -191,8 +191,8 @@ spec:
   		type: front-end
 ```
 ```sh
-$ kubectl create -f replicaset-definition.yml 		# create th replication controller
-$ kubectl get replicaset								          # get the list of created replicaset
+$ kubectl create -f replicaset-definition.yml       # create the replication controller
+$ kubectl get replicaset                            # get the list of created replicaset
 ```
 
 **6. Update the replica to scale from 3 to 6**
