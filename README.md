@@ -552,8 +552,70 @@ $ kubectl delete pod nginx
 $ kubectl apply -f nginx.yaml
 ```
 
+g) Namespaces
+----
+**1. How many Namespaces exist on the system?**
+```sh
+$ kubectl get namespaces
+$ kubectl get ns --no-headers | wc -l
+```
 
-e) Labels and Selectors
+**2. How many pods exist in the research namespace?**
+```sh
+$ kubectl get pods --namespace=research
+$ kubectl -n research get pods --no-headers
+```
+
+**3. Create a POD in the finance namespace - Pod name: redis; Image Name: redis.**
+```sh
+$ kubectl run redis --image=redis --dry-run=client -o yaml > pod.yaml
+```
+
+```yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: redis
+  name: redis
+  namespace: finance #namespace added here#
+spec:
+  containers:
+  - image: redis
+    name: redis
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+```
+
+```sh
+$ kubectl apply -f pod.yaml
+$ kubectl -n finance get pod redis
+```
+
+OR
+
+```sh
+$ kubectl run redis --image=redis --namespace=finance
+$ kubectl run redis --image=redis -n finance
+$ kubectl -n finance get pod redis
+```
+
+**4. Check the pods in all namespaces**
+```sh
+$ kubectl get pods --all-namespaces
+```
+
+**5. Check the services in the "dev" namespace**
+```sh
+$ kubectl -n dev get services
+```
+
+
+h) Labels and Selectors
 ----
 **1. We have deployed a number of PODs. They are labelled with tier, env and bu. How many PODs exist in the dev environment? Use selectors to filter the output**
 ```sh
@@ -577,7 +639,7 @@ $ kubectl get all --selector env=prod,bu=finance,tier=frontend
 ```
 
 
-f) Logging & Monitoring - viewing perfomance metrics on Kubernetes Cluster
+i) Logging & Monitoring - viewing perfomance metrics on Kubernetes Cluster
 ----
 
 Cluster Components
