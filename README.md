@@ -274,79 +274,81 @@ $ kubectl scale --replicas=2 replicaset new-replica-set
 ```
 
 
-d) Deployments
+d) Services
 ----
-**1. How many PODs exist on the system?**
+**1. How many Services exist on the system?**
 ```sh
-$ kubectl get pods
+$ kubectl get svc
 ```
 
-**2. How many ReplicaSets exist on the system?**
+**2. How many Services exist on the system?**
 ```sh
-$ kubectl get replicaset
+$ kubectl get services
+$ kubectl get svc
 ```
 
-**3. How many Deployments exist on the system?**
-```sh
-$ kubectl get deployment
-```
-
-**4. How many Services exist on the system?**
+**3. What is the type of the default kubernetes service?**
 ```sh
 $ kubectl get services
 ```
 
-**5. What is the type of the default kubernetes service?**
-```sh
-$ kubectl get services
+**4. What is the targetPort configured on the kubernetes service?**
 ```
-
-**6. What is the targetPort configured on the kubernetes service?**
-```sh
 $ kubectl describe services
 ```
 
-**7. How many labels are configured on the kubernetes service?**
+**5. How many labels are configured on the kubernetes service?**
 ```sh
 $ kubectl describe service
 ```
 
-**8. How many Endpoints are attached on the kubernetes service?**
+**6. How many Endpoints are attached on the kubernetes service?**
 ```sh
 $ kubectl describe service
 ```
 
-**9. How many Deployments exist on the system now?**
+**7. Create a new service to access the web application using the info below:**
+*Name: webapp-service
+Type: NodePort
+targetPort: 8080
+port: 8080
+nodePort: 30080
+selector: simple-webapp*
+
+```YAML
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  type: NodePort
+  ports:
+    - targetPort: 8080
+      port: 8080
+      nodePort: 30080
+  selector:
+    name: simple-webapp
+```
+
+```sh
+$ vi service-definition-1.yaml
+$ kubectl apply -f service-definition-1.yaml 
+```
+
+e) Deployments
+----
+**1. How many Deployments exist on the system now?**
 ```sh
 $ kubectl get deployment
 ```
 
-**10. How many ReplicaSets exist on the system now?**
-```sh
-$ kubectl get replicaset
-```
-
-**11. How many PODs exist on the system now?**
-```sh
-$ kubectl get pods
-```
-
-**12. Out of all the existing PODs, how many are ready?**
-```sh
-$ kubectl get deployment
-```
-
-**13. What is the image used to create the pods in the new deployment?**
+**2. What is the image used to create the pods in the new deployment?**
 ```sh
 $ kubectl describe deployment frontend-deployment
 ```
 
-**14. Why do you think the deployment is not ready?**
-```sh
-$ kubectl get pods  # check STATUS
-```
-
-**15. Create "Deployment" using YAML based configuration file (deployment-definition-1.yaml)**
+**3. Create "Deployment" using YAML based configuration file (deployment-definition-1.yaml)**
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -375,7 +377,7 @@ spec:
 $ kubectl apply -f deployment-definition-1.yaml
 ```
 
-**16.Create a new Deployment with the below attributes using your own deployment definition file:**
+**4. Create a new Deployment with the below attributes using your own deployment definition file:**
 ```yaml
 Name: httpd-frontend;
 Replicas: 3;
@@ -414,39 +416,6 @@ spec:
 $ kubectl apply -f deployment-definition-2.yaml
 ```
 
-**17. Create a new service to access the web application using the service-definition-1.yaml file**
-```yaml
-Name: webapp-service
-Type: NodePort
-targetPort: 8080
-port: 8080
-nodePort: 30080
-selector: simple-webapp
-```
-
-```sh
-$ vi service-definition-1.yaml
-``` 
-
-```yaml
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webapp-service
-spec:
-  type: NodePort
-  ports:
-    - targetPort: 8080
-      port: 8080
-      nodePort: 30080
-  selector:
-    name: simple-webapp
-```
-
-```sh
-$ kubectl apply -f service-definition-1.yaml 
-```
 
 e) Deployments - Update and Rollback
 ----
