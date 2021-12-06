@@ -308,12 +308,14 @@ $ kubectl describe service
 ```
 
 **7. Create a new service to access the web application using the info below:**
+```yaml
 Name: webapp-service
 Type: NodePort
 targetPort: 8080
 port: 8080
 nodePort: 30080
 selector: simple-webapp
+```
 
 ```YAML
 ---
