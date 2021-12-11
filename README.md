@@ -571,6 +571,416 @@ $ kubectl delete pod nginx
 $ kubectl apply -f nginx.yaml
 ```
 
+x) Manual Scheduling
+---
+**1. Manually schedule the pod on node01.**
+
+```YAML
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  nodeName: node01
+  containers:
+  -  image: nginx
+     name: nginx
+```
+
+```ssh
+$ kubectl apply -f nginx.yaml
+$ kubectl get pods
+```
+
+
+**2. Manually schedule the pod on master.**
+
+```YAML
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  nodeName: master
+  containers:
+  -  image: nginx
+     name: nginx
+```
+
+```ssh
+$ kubectl apply -f nginx.yaml
+$ kubectl get pods
+```
+
+x) Taints and Tolerations
+---
+**1. Check if any taints exist on node node01?**
+```ssh
+$ kubectl describe node node01 | grep -i taint
+```
+
+**2. Create a taint on node01 with:**
+```
+Key = spray
+Value = mortein
+Effect = NoSchedule
+```
+ 
+```ssh
+$ kubectl taint node node01 spray=mortein:NoSchedule
+$ kubectl describe node node01 | grep -i taint
+```
+
+**3. Create another pod named bee with the nginx image, which has a toleration set to the taint mortein.**
+```
+Image name: nginx
+Key: spray
+Value: mortein
+Effect: NoSchedule
+Status: Running
+```
+```ssh
+$ kubectl run bee --image=nginx --restart=Never --dry-run -o yaml > bee.yaml
+
+# looking up for the options available for tolerations
+$ kubectl explain pod --recursive | grep -A5 tolerations
+```
+
+```YAML
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: bee
+  name: bee
+spec:
+  containers:
+  - image: nginx
+    name: bee
+  tolerations:
+  - effect: NoSchedule
+    key: spray
+    operator: Equal
+    value: mortein
+```
+
+**4. Check if any taints exist on master node?**
+```ssh
+$ kubectl describe node master | grep -i taint
+```
+
+**5. Remove the taint on controlplane, which currently has the taint effect of NoSchedule.**
+```ssh
+$ kubectl taint node controlplane node-role.kubernetes.io/master:NoSchedule-
+```
+
+x) Node Affinity
+---
+**1. Create a deployment with the following: name -> blue; image -> nginx; replicas -> 3**
+```ssh
+$ kubectl create deployment blue --image=nginx --replicas=3
+
+```
+
+**2. Set Node Affinity to the deployment to place the pods on node01 only.**
+```ssh
+$ kubectl get deployments.apps blue -o yaml > blue.yaml
+```
+
+Update the deployment by running kubectl edit deployment blue and add the nodeaffinity section as follows:
+```YAML
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      run: nginx
+  template:
+    metadata:
+      labels:
+        run: nginx
+    spec:
+      containers:
+      - image: nginx
+        imagePullPolicy: Always
+        name: nginx
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: color
+                operator: In
+                values:
+                - blue
+```
+
+```ssh
+$ kubectl delete deployments.apps blue
+$ kubectl apply -f blue.yaml
+```
+
+**3.Create a new deployment named red with the nginx image and 2 replicas, and ensure it gets placed on the controlplane node only. Use the label - node-role.kubernetes.io/master - set on the controlplane node.**
+
+
+```ssh
+$ touch red.yaml
+$ vi red.yaml
+```
+
+```YAML
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: red
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      run: nginx
+  template:
+    metadata:
+      labels:
+        run: nginx
+    spec:
+      containers:
+      - image: nginx
+        imagePullPolicy: Always
+        name: nginx
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
+```
+
+```ssh
+$ kubectl create -f red.yaml
+$ kubectl get pods
+```
+
+
+
+x) DaemonSets
+---
+**1.Get all DaemonSets that are created in the cluster in all namespaces?**
+```ssh
+$ kubectl get daemonsets --all-namespaces
+```
+
+**2. Check onhow many nodes are the pods scheduled by the DaemonSet kube-proxy**
+```ssh
+$ kubectl -n kube-system get pods -o wide | grep proxy
+```
+
+**3.Deploy a DaemonSet for FluentD Logging. Use the given specifications:**
+```
+Name: elasticsearch
+Namespace: kube-system
+Image: k8s.gcr.io/fluentd-elasticsearch:1.20
+```
+
+```ssh
+$ kubectl create deployment elasticsearch --image=k8s.gcr.io/fluentd-elasticsearch:1.20 -n kube-system --dry-run=client -o yaml > fluentd.yaml
+```
+```YAML
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: elasticsearch
+  name: elasticsearch
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - image: k8s.gcr.io/fluentd-elasticsearch:1.20
+        name: fluentd-elasticsearch
+```
+
+```ssh
+$ vi fluentd.yaml
+$ kubectl apply -f fluentd.yaml
+$ kubectl -n kube-system get ds elasticsearch
+```
+
+
+x) Static Pods
+---
+
+**1. Check the number of static pods in this cluster in all namespaces?**
+```ssh
+# hint: look for the suffix "master" or "node01"
+$ kubectl get pods --all-namespaces | grep "\-master"
+$ kubectl get pods --all-namespaces | grep "\-node01"
+
+```
+
+**2. Check on which nodes the static pods are created currently?**
+```ssh
+$ kubectl get pods --all-namespaces -o | grep "\-master" 
+```
+
+**3. What is the path of the directory holding the static pod definition files?**
+```ssh
+$ ps -ef | grep kubelet
+
+# search for --config
+$ grep -i static /var/lib/kubelet/config.yaml
+> etc/kubernetes/manifests
+```
+
+**4. How many pod definition files are present in the manifests folder?**
+```ssh
+$ 4 
+```
+
+**5. What is the docker image used to deploy the kube-api server as a static pod?**
+```ssh
+$ cd /etc/kubernetes/manifests/
+$ grep -i image kube-apiserver.yaml
+```
+
+**6. Create a static pod named "static-busybox" that uses the "busybox" image and the command "sleep 1000"**
+```ssh
+$ kubectl run --restart=Never --image=busybox static-busybox --dry-run=client -o yaml --command -- sleep 1000 > /etc/kubernetes/manifests/static-busybox.yaml
+
+$ kubectl get pods
+```
+
+
+x) Multiple Schedulers
+---
+**1.Deploy an additional scheduler to the cluster following the given specification.**
+
+Use the manifest file used by kubeadm tool. Use a different port than the one used by the current one.
+
+```YAML
+Namespace: kube-system
+Name: my-scheduler
+Status: Running
+Custom Scheduler Name
+```
+
+```ssh
+$ touch my-scheduler.yaml
+$ vi my-scheduler.yaml
+```
+
+```YAML
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    component: my-scheduler
+    tier: control-plane
+  name: my-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - kube-scheduler
+    - --authentication-kubeconfig=/etc/kubernetes/scheduler.conf
+    - --authorization-kubeconfig=/etc/kubernetes/scheduler.conf
+    - --bind-address=127.0.0.1
+    - --kubeconfig=/etc/kubernetes/scheduler.conf
+    - --leader-elect=false
+    - --port=10282
+    - --scheduler-name=my-scheduler
+    - --secure-port=0
+    image: k8s.gcr.io/kube-scheduler:v1.19.0
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 10282
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 15
+    name: kube-scheduler
+    resources:
+      requests:
+        cpu: 100m
+    startupProbe:
+      failureThreshold: 24
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 10282
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 15
+    volumeMounts:
+    - mountPath: /etc/kubernetes/scheduler.conf
+      name: kubeconfig
+      readOnly: true
+  hostNetwork: true
+  priorityClassName: system-node-critical
+  volumes:
+  - hostPath:
+      path: /etc/kubernetes/scheduler.conf
+      type: FileOrCreate
+    name: kubeconfig
+status: {}
+```
+
+```ssh
+$ kubectl create -f my-scheduler.yaml
+$ kubectl -n kube-system get pods
+```
+
+**2. A POD definition file is given. Use it to create a POD with the new custom scheduler.**
+
+```
+Name: nginx
+Uses custom scheduler
+Status: Running
+```
+
+```YAML
+$ ---
+apiVersion: v1 
+kind: Pod 
+metadata:
+  name: nginx 
+spec:
+  schedulerName: my-scheduler
+  containers:
+  - image: nginx
+    name: nginx
+```
+
+```ssh
+$ kubectl apply -f pod.yaml
+$ kubectl get pods
+$ watch "kubectl get pods"
+```
+
+
+
 g) Namespaces
 ----
 **1. How many Namespaces exist on the system?**
@@ -635,26 +1045,31 @@ $ kubectl -n dev get services
 
 
 h) Labels and Selectors
-----
-**1. We have deployed a number of PODs. They are labelled with tier, env and bu. How many PODs exist in the dev environment? Use selectors to filter the output**
-```sh
-$ kubectl get pods --selector env=de
+---
+**1. How many PODs exist in the dev environment?**
+```ssh
+$ kubectl get pods --show-labels
+$ kubectl get pods -l env=dev --no-headers | wc -l
 ```
 
 **2. How many PODs are in the finance business unit (bu)?**
-```sh
-$ kubectl get pods --selector bu=finance
+```ssh
+$ kubectl get pods -l bu=finance --no-headers | wc -l
 ```
 
 **3. How many objects are in the prod environment including PODs, ReplicaSets and any other objects?**
-```
-$ kubectl get all --selector env=prod
-$ kubectl get all --selector env=prod --no-headers | wc -l
+```ssh
+$ kubectl get all -l env=prod --no-headers | wc -l
 ```
 
 **4. Identify the POD which is part of the prod environment, the finance BU and of frontend tier?**
-```sh
-$ kubectl get all --selector env=prod,bu=finance,tier=frontend
+```ssh
+$ kubectl get pods -l env=prod,bu=finance,tier=frontend
+```
+
+**5. Apply a label color=blue to node node01.**
+```ssh
+$ kubectl label nodes node01 color=blue
 ```
 
 
