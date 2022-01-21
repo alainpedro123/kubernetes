@@ -1,8 +1,6 @@
 Kubernetes Fundamentals - Exercises 💻🚀
 ===============================
 
-Getting started with Kubernetes - Exercises & Solutions
-
 a) Getting started
 ----
 1. What is the version of Kubernetes running on the nodes?
