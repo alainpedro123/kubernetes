@@ -1,4 +1,4 @@
-Kubernetes Fundamentals 💻🚀
+Exercises and Solutions
 ===============================
 
 Getting started with Kubernetes - Exercises & Solutions
