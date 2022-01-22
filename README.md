@@ -313,11 +313,6 @@ Status: Running
 Custom Scheduler Name
 ```
 
-```ssh
-$ touch my-scheduler.yaml
-$ vi my-scheduler.yaml
-```
-
 ```YAML
 ---
 apiVersion: v1
