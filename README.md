@@ -35,12 +35,6 @@ spec:
     image: nginx
 ```   
 
-```sh
-$ "kubectl apply -f pod.yaml" OR "kubectl create -f pod.yaml"
-$ kubectl get pods
-$ kubectl describe pod nginx
-```
-
 12. Create a new pod with the name redis and with the image redis123. Use a pod-definition YAML file below. (the image name is wrong)
 ```yaml
 apiVersion: v1
